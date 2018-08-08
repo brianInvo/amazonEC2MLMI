@@ -1,0 +1,166 @@
+---
+title: "Amazon EC2 Pricing for MLMI Projects"
+author: "Brian B. Avants"
+date: "8/7/2018"
+urlcolor: blue
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+>| *“Make it work, make it right, make it fast” … and then cost efficient.*
+
+> [- kent beck](https://medium.com/teads-engineering/real-life-aws-cost-optimization-strategy-at-teads-135268b0860f)
+
+
+
+
+## Cost of data processing and storage in Amazon Elastic Computing environment
+
+The cost of EC2 will be a function, primarily, of the size of the data and the amount and type of computing, storage and data transfer a project requires.  In EC2 terms, this breaks down into four factors:
+
+* N: number of data elements, here assumed to be medical images which leads us to focus on compute instances that come with sufficient RAM.
+
+* C: type of computing that is needed to process the images (CPU, GPU, RAM).
+    * type: [https://aws.amazon.com/ec2/instance-types/](https://aws.amazon.com/ec2/instance-types/)
+    * spot-pricing cost: [https://aws.amazon.com/ec2/spot/pricing/](https://aws.amazon.com/ec2/spot/pricing/)
+
+* E: storage required on EBS
+    * Elastic block storage (EBS) cost: $0.10/GB - $0.20/GB [https://aws.amazon.com/ebs/pricing/](https://aws.amazon.com/ebs/pricing/)
+
+* T: transfer costs that will relate to how much of the compute output that one wants to save locally and/or transfer to S3. These can get complicated and range from free to several factors higher depending on degree of backup and number of transfers between regions ( which seems to be the main contributor to rising costs ).
+    * Amazon EBS Snapshots to Amazon S3 currently \$0.05 per GB-month of data stored [https://aws.amazon.com/ebs/pricing/](https://aws.amazon.com/ebs/pricing/)
+    * S3 cost: [https://aws.amazon.com/s3/pricing/](https://aws.amazon.com/s3/pricing/)
+    
+There are also relatively controllable "support costs" which act like taxes: [https://aws.amazon.com/premiumsupport/pricing/](https://aws.amazon.com/premiumsupport/pricing/).
+
+    
+A simple model of total cost will then be: 
+\begin{equation}
+\label{eq:1}
+\text{cost} \propto  N * ( u * C + \gamma * ( E + T ) ) * m
+\end{equation}
+where $m$ is a multiplier for support costs, $\gamma$ scales the output for the expected amount of storage, $u$ indicates utilization (e.g. 10 for 10 hours) and $E, T$ are costs of storage on EBS and transfer to S3.
+
+Why are we computing this when amazon provides a calculator? This lets us begin to build a predictive estimate for future work and modify/adjust over time.  Furthermore, it's faster and more scriptable, versus endless poking around a website GUI, to have such a tool.
+
+## Amazon EC2 pricing for example instances
+
+Some instances come with storage.  Note also that reserved pricing or spot pricing will reduce these costs by a factor of 50\% or more.
+
+```{r der,echo=FALSE}
+ec2costData = read.csv( "/Users/stnava/code/amazonEC2cost/amazonEC2cost.csv" )
+pander::set.caption( "Cost for select EC2 instances as of August 2018")
+winst = c( "t2.large", "t2.xlarge", "r3.large", "r5.large", "c3.xlarge",  "m3.large", "m3.xlarge", "m5.large", "m5d.large" )
+selector = as.character(ec2costData$Name) %in% winst
+pander::pander( ec2costData[ selector , -c(  4, 5, 7  ) ] )
+```
+
+[useful resource for this material](http://oliverelliott.org/article/computing/tut_bio_aws_2/)
+
+EC (elastic computing) provides a linux environment (e.g. ubuntu, debian, etc) with a specified number of cores and memory available.
+
+
+## Amazon EC2 pricing for an example medical imaging project
+
+Let us assume we want to compute BrainAge with ANTs processing based on public data.  This would be similar to a cloud-based project, [NAPR](https://www.ncbi.nlm.nih.gov/pubmed/29058212), in which models were trained using healthy control data from the ABIDE, CoRR, DLBS and NKI Rockland neuroimaging datasets (total N = 2367, age range 6-89 years).  
+
+We choose r5 instances, though others would do.  Description from amazon: "The memory-optimized R5 instances use custom Intel Xeon Platinum 8000 Series (Skylake-SP) processors running at up to 3.1 GHz, powered by sustained all-core Turbo Boost. They are perfect for distributed in-memory caches, in-memory analytics, and big data analytics, and are available in six sizes."
+
+We assign the following values for eq-$\ref{eq:1}$:
+```{r setnums,echo=FALSE}
+n = 2400
+r5cost = 0.126 # reserved cost is 0.05
+r5hours = 10
+gamma = 0.209 # in GB
+ondiskmemory = n * gamma # in GB
+ebsCost = 0.1 # $0.1 per GB per month
+s3Cost = 0.05 # $0.1 per GB per month
+monthhours = 30 * 24
+m = 1.1
+# N * ( u * C + \gamma * ( E + T ) ) * m
+totaleqest= n *  ( r5hours * r5cost + gamma * ebsCost  + gamma * s3Cost  ) * m
+```
+
+* N = `r n` images;
+* u = `r r5hours` hours per instance, based on time we expect the processing will take per brain;
+* C = r5.large: \$`r r5cost` is the on-demand instance cost vs \$$0.05$ hourly for reserved cost;
+* $\gamma$ = `r gamma` which leads to on-disk storage of `r ondiskmemory`GB;
+* E = \$`r ebsCost` nominal cost per GB (per month) on EBS
+* S = \$`r s3Cost`  nominal cost per GB (per month) transfer to S3 ( backup )
+* m = `r m` a multiplier for service cost
+
+**This yields an estimate of \$`r totaleqest` for the BrainAge project.**  We validate this calculation against the official amazon estimate for this project:
+
+
+```{r amzn,echo=FALSE}
+
+amzn = read.csv( "/Users/stnava/code/amazonEC2cost/calcAmznBrainAge.csv" )
+pander::set.caption("Amazon estimate for BrainAge project")
+pander::pander( amzn )
+
+```
+
+It remains to be seen if these are accurate estimates of actual cost.  Costs can be reduced by > 50\% by using:
+
+* reserved instances
+* spot instances
+
+Only implementation will reveal true costs.
+
+## Other notes and comments below (ignore unless interested)
+
+### EC2 types and on demand pricing
+
+* types: https://aws.amazon.com/ec2/instance-types/
+
+* m5 ("next generation EC"): https://aws.amazon.com/ec2/instance-types/m5/
+
+### Spot pricing
+
+Amazon spot pricing saves costs on using EC2 by scheduling your work to run when computing becomes available.  This is similar to havign a "low priority" job on a standard queue scheduling system.  Cost savings are roughly 50%, possibly more.
+
+[Current amazon spot pricing link](https://aws.amazon.com/ec2/spot/pricing/)
+
+### Cluster computing
+
+http://star.mit.edu/cluster/
+
+https://alces-flight.com/
+
+**Storing Data on AWS**
+
+So, where does data go? Project data, as well as files necessary to run bioinformatics software (reference genomes, bwa indicies, blast dbs, SNP dbs, vcfs, etc), should go on S3. (If you want archival storage for data you're rarely going to touch, there's another Amazon service called Glacier.) Here's the story of S3 vs EBS in bullet points:
+
+* EBS Volumes are expensive
+
+* S3 is cheap
+
+* But: you can’t compute on S3 (in general)
+
+* And: you can compute on EBS
+
+* So: pull S3 stuff onto EBS temporarily, compute, then delete the EBS volume when finished
+
+In other words, S3 is a long-term storage solution; an EBS volume is a short-term storage solution while you're running your jobs.
+
+Tip: To save money, don’t keep big volumes kicking around for a long time after your jobs have finished.
+
+Tip: some tools can work directly with bam files on S3 sans download (see Biostars: Tool for random access to indexed BAM files in S3?).
+
+### Post-hoc analysis of S3/EC costs
+
+https://aws.amazon.com/blogs/big-data/analyzing-aws-cost-and-usage-reports-with-looker-and-amazon-athena/
+
+
+## amazon calculator
+
+https://calculator.s3.amazonaws.com/index.html
+

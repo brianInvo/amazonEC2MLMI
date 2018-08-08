@@ -1,0 +1,15 @@
+Your Estimate,,,,
+Service Type,Components,Region,Component Price,Service Price
+Amazon EC2 Service (US East (N. Virginia)),,,,$3099.00
+,Compute:,US East (N. Virginia),$3024.00,
+,EBS Volumes:,US East (N. Virginia),$50.00,
+,EBS IOPS:,US East (N. Virginia),$0.00,
+,EBS Snapshots:,US East (N. Virginia),$25.00,
+AWS Data Transfer In,,,,$0.00
+,US East (N. Virginia) Region:,Global,$0.00,
+AWS Data Transfer Out,,,,$44.91
+,US East (N. Virginia) Region:,Global,$44.91,
+AWS Support (Business),,,,$313.96
+,Support for all AWS services:,,$313.96,
+,,Free Tier Discount:,,-$4.31
+,,Total Monthly Payment:,,$3453.56
