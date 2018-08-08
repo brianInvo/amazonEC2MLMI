@@ -49,7 +49,7 @@ A simple model of total cost will then be:
 \end{equation}
 where $m$ is a multiplier for support costs, $\gamma$ scales the output for the expected amount of storage, $u$ indicates utilization (e.g. 10 for 10 hours) and $E, T$ are costs of storage on EBS and transfer to S3.
 
-Why are we computing this when amazon provides a calculator? This lets us begin to build a predictive estimate for future work and modify/adjust over time.  Furthermore, it's faster and more scriptable, versus endless poking around a website GUI, to have such a tool.
+Why are we computing this when amazon provides a calculator? This lets us begin to build a predictive estimate for future work and modify/adjust over time.  Furthermore, it's faster and more scriptable, versus endless poking around a website GUI, to have such a tool.  Finally, we implement to aid understanding.
 
 ## Amazon EC2 pricing for example instances
 
@@ -74,7 +74,7 @@ Let us assume we want to compute BrainAge with ANTs processing based on public d
 
 We choose r5 instances, though others would do.  Description from amazon: "The memory-optimized R5 instances use custom Intel Xeon Platinum 8000 Series (Skylake-SP) processors running at up to 3.1 GHz, powered by sustained all-core Turbo Boost. They are perfect for distributed in-memory caches, in-memory analytics, and big data analytics, and are available in six sizes."
 
-We assign the following values for eq-$\ref{eq:1}$:
+We assign the following values for equation ($\ref{eq:1}$):
 ```{r setnums,echo=FALSE}
 n = 2400
 r5cost = 0.126 # reserved cost is 0.05
@@ -113,7 +113,7 @@ It remains to be seen if these are accurate estimates of actual cost.  Costs can
 * reserved instances
 * spot instances
 
-Only implementation will reveal true costs.
+Only implementation will reveal true costs.  Extra costs are likely to occur due to the overhead of setting up the environment (possibly compilation of open source tools), to setting up/testing/managing cluster computing and/or any potential failures due to insufficient memory and/or bugs/inconsistencies in the EC2 environment.
 
 ## Other notes and comments below (ignore unless interested)
 
