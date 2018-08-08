@@ -56,7 +56,7 @@ Why are we computing this when amazon provides a calculator? This lets us begin 
 Some instances come with storage.  Note also that reserved pricing or spot pricing will reduce these costs by a factor of 50\% or more.
 
 ```{r der,echo=FALSE}
-ec2costData = read.csv( "/Users/stnava/code/amazonEC2cost/amazonEC2cost.csv" )
+ec2costData = read.csv( "/Users/stnava/code/amazonEC2MLMI/amazonEC2cost.csv" )
 pander::set.caption( "Cost for select EC2 instances as of August 2018")
 winst = c( "t2.large", "t2.xlarge", "r3.large", "r5.large", "c3.xlarge",  "m3.large", "m3.xlarge", "m5.large", "m5d.large" )
 selector = as.character(ec2costData$Name) %in% winst
@@ -102,7 +102,7 @@ totaleqest= n *  ( r5hours * r5cost + gamma * ebsCost  + gamma * s3Cost  ) * m
 
 ```{r amzn,echo=FALSE}
 
-amzn = read.csv( "/Users/stnava/code/amazonEC2cost/calcAmznBrainAge.csv" )
+amzn = read.csv( "/Users/stnava/code/amazonEC2MLMI/calcAmznBrainAge.csv" )
 pander::set.caption("Amazon estimate for BrainAge project")
 pander::pander( amzn )
 
