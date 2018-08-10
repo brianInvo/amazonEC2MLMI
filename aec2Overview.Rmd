@@ -1,7 +1,7 @@
 ---
 title: "Amazon EC2 Pricing for MLMI Projects"
 author: "Brian B. Avants"
-date: "8/7/2018"
+date: "8/10/2018"
 urlcolor: blue
 output:
   pdf_document: default
@@ -56,7 +56,7 @@ Why are we computing this when amazon provides a calculator? This lets us begin 
 Some instances come with storage.  Note also that reserved pricing or spot pricing will reduce these costs by a factor of 50\% or more.
 
 ```{r der,echo=FALSE}
-ec2costData = read.csv( "/Users/stnava/code/amazonEC2MLMI/amazonEC2cost.csv" )
+ec2costData = read.csv( "./amazonEC2cost.csv" )
 pander::set.caption( "Cost for select EC2 instances as of August 2018")
 winst = c( "t2.large", "t2.xlarge", "r3.large", "r5.large", "c3.xlarge",  "m3.large", "m3.xlarge", "m5.large", "m5d.large" )
 selector = as.character(ec2costData$Name) %in% winst
@@ -70,13 +70,21 @@ EC (elastic computing) provides a linux environment (e.g. ubuntu, debian, etc) w
 
 ## Amazon EC2 pricing for an example medical imaging project
 
+```{r calcn, echo=FALSE}
+myn=2367+541+313+494+1200+11500+10000
+```
+
 Let us assume we want to compute BrainAge with ANTs processing based on public data.  This would be similar to a cloud-based project, [NAPR](https://www.ncbi.nlm.nih.gov/pubmed/29058212), in which models were trained using healthy control data from the ABIDE, CoRR, DLBS and NKI Rockland neuroimaging datasets (total N = 2367, age range 6-89 years).  
 
-We choose r5 instances, though others would do.  Description from amazon: "The memory-optimized R5 instances use custom Intel Xeon Platinum 8000 Series (Skylake-SP) processors running at up to 3.1 GHz, powered by sustained all-core Turbo Boost. They are perfect for distributed in-memory caches, in-memory analytics, and big data analytics, and are available in six sizes."
+
+Additional datasets might include IXI (531), OASIS (313), SALD (494), SLIM (580), PNC ($\approx$ 1200), ABCD (up to 11,500, currently 4,500) the Human Connectome Project (1,200-1,400) as well as the UK Biobank (10,000-20,000).  In total, these would yield over 25,000 normative T1-weighted neuroimages covering the human lifespan.  
+
+To process this smaller dataset (2367), we choose r5 instances, though others would do.  Description from amazon: "The memory-optimized R5 instances use custom Intel Xeon Platinum 8000 Series (Skylake-SP) processors running at up to 3.1 GHz, powered by sustained all-core Turbo Boost. They are perfect for distributed in-memory caches, in-memory analytics, and big data analytics, and are available in six sizes."
 
 We assign the following values for equation ($\ref{eq:1}$):
 ```{r setnums,echo=FALSE}
 n = 2400
+# n = 26415
 r5cost = 0.126 # reserved cost is 0.05
 r5hours = 10
 gamma = 0.209 # in GB
@@ -102,7 +110,7 @@ totaleqest= n *  ( r5hours * r5cost + gamma * ebsCost  + gamma * s3Cost  ) * m
 
 ```{r amzn,echo=FALSE}
 
-amzn = read.csv( "/Users/stnava/code/amazonEC2MLMI/calcAmznBrainAge.csv" )
+amzn = read.csv( "./calcAmznBrainAge.csv" )
 pander::set.caption("Amazon estimate for BrainAge project")
 pander::pander( amzn )
 
@@ -112,6 +120,9 @@ It remains to be seen if these are accurate estimates of actual cost.  Costs can
 
 * reserved instances
 * spot instances
+
+
+Processing this smaller dataset will improve cost estimates for the full 30,000 subject processing (above data plus ADNI, PPMI and other aging and/or neurodegenerative disease cohorts).
 
 Only implementation will reveal true costs.  Extra costs are likely to occur due to the overhead of setting up the environment (possibly compilation of open source tools), to setting up/testing/managing cluster computing and/or any potential failures due to insufficient memory and/or bugs/inconsistencies in the EC2 environment.
 
